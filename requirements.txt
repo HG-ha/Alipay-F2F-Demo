@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 jinja2
+pillow
+qrcode
 alipay-sdk-python==3.7.409

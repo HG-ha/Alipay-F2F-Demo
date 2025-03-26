@@ -13,21 +13,54 @@
 ## 安装说明
 
 1. 克隆项目到本地
-```bash
-git clone <repository-url>
-cd 支付宝当面付
-```
+    ```bash
+    git clone https://github.com/HG-ha/Alipay-F2F-Demo
+    cd Alipay-F2F-Demo
+    ```
 
 2. 安装依赖
-```bash
-pip install -r requirements.txt
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 3. 配置支付宝参数
-修改 `config.py` 文件，填入您的支付宝应用参数：
-- ALIPAY_APPID：应用ID
-- APP_PRIVATE_KEY：应用私钥
-- ALIPAY_PUBLIC_KEY：支付宝公钥
+    - 在 `utils` 下创建 `config.py` 文件，填入您的支付宝应用参数：
+    - ALIPAY_APPID：应用ID
+    - APP_PRIVATE_KEY：应用私钥
+    - ALIPAY_PUBLIC_KEY：支付宝公钥
+    - SAND_BOX_APPID：沙箱环境应用ID
+    - SAND_BOX_APP_PRIVATE_KEY：沙箱环境应用私钥
+    - SAND_BOX_ALIPAY_PUBLIC_KEY：沙箱环境支付宝公钥
+    - 沙箱工具下载: [https://open.alipay.com/develop/sandbox/tool](https://open.alipay.com/develop/sandbox/tool)
+
+    - 示例配置文件 (config.py):
+        ```python
+        # 支付宝应用相关配置
+        ALIPAY_APPID = "2021000000000000"  # 请替换为您的APPID
+
+        # 应用私钥（PKCS1格式，掐头去尾，不换行不空格）
+        APP_PRIVATE_KEY = """MIIEpAIBAAKCAQEAnxxx...（示例密钥，需要替换）...xxx"""
+
+        # 支付宝公钥 (确保密钥格式正确，包含头部和尾部)
+        ALIPAY_PUBLIC_KEY = """
+        -----BEGIN PUBLIC KEY-----
+        MIIBIjANBgkqhkiG9w0BA...（示例密钥，需要替换）...xxx
+        -----END PUBLIC KEY-----
+        """
+
+        # 沙箱配置
+        SAND_BOX_APPID = "2021000000000000"  # 请替换为您的APPID
+
+        # 应用私钥（PKCS1格式，掐头去尾，不换行不空格）
+        SAND_BOX_APP_PRIVATE_KEY = """MIIEpAIBAAKCAQEAnxxx...（示例密钥，需要替换）...xxx"""
+
+        # 支付宝公钥 (确保密钥格式正确，包含头部和尾部)
+        SAND_BOX_ALIPAY_PUBLIC_KEY = """
+        -----BEGIN PUBLIC KEY-----
+        MIIBIjANBgkqhkiG9w0BA...（示例密钥，需要替换）...xxx
+        -----END PUBLIC KEY-----
+        """
+        ```
 
 ## 运行项目
 
