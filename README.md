@@ -98,6 +98,8 @@ python main.py
 - 建议在正式使用前充分测试沙箱环境
 - 请遵守支付宝相关的接入规范和要求
 
+![演示图片](./assets/home.png)
+
 ## 许可证
 
 MIT License
