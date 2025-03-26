@@ -1,0 +1,68 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.qr-container {
+    margin: 20px 0;
+    display: none;
+}
+
+.countdown {
+    color: red;
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+.status {
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+button:hover {
+    background-color: #40a9ff;
+}
+
+.input-group {
+    margin: 15px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.input-group label {
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.input-group input {
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    width: 150px;
+}
+
+.amount-display {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #1890ff;
+}
+
+#qrcode {
+    margin: 0 auto;
+    width: 200px;
+}

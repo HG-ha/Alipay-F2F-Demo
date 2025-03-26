@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alipay F2F Demo - 支付宝当面付演示</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 30px;
+        }
+
+        .qrcode-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        #qrcode {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .status-container {
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>支付宝当面付演示 (Alipay F2F Demo)</h1>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="sandboxToggle" checked>
+                <label class="form-check-label" for="sandboxToggle">沙箱环境</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="paymentTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#qrcodePay">扫码支付</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="qrcodePay">
+                                <form id="orderForm">
+                                    <div class="mb-3">
+                                        <label for="amount" class="form-label">金额（元）</label>
+                                        <input type="number" class="form-control" id="amount" name="amount" value="0.01"
+                                            min="0.01" step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="subject" class="form-label">商品名称</label>
+                                        <input type="text" class="form-control" id="subject" name="subject"
+                                            value="测试商品">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="timeout" class="form-label">订单超时时间</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="timeout" name="timeout"
+                                                value="30m" placeholder="例如：30m、2h、1d">
+                                            <span class="input-group-text">m-分钟,h-小时,d-天,1c-当天</span>
+                                        </div>
+                                        <div class="form-text">取值范围：1m～15d，不接受小数点，二维码最长有效期是2小时, 不管该参数传递的值是多少,
+                                            超过2小时后二维码都将失效不能再进行扫码支付，1c-当天的情况下，无论交易何时创建，都在0点关闭</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">创建支付二维码</button>
+                                </form>
+                                <div class="qrcode-container" style="display: none;">
+                                    <img id="qrcode" src="" alt="支付二维码">
+                                    <p id="orderInfo" class="mt-2"></p>
+                                </div>
+                                <div id="payment-timer" class="mt-2" style="display: none;">
+                                    <span class="text-warning">支付倒计时：</span>
+                                    <span id="countdown"></span>
+                                </div>
+                                <div class="status-container" style="display: none;">
+                                    <div class="alert alert-info" id="orderStatus">订单状态：等待支付</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        订单管理
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="queryOrderId" class="form-label">订单ID</label>
+                            <input type="text" class="form-control" id="queryOrderId" placeholder="输入订单ID查询状态">
+                        </div>
+                        <button id="queryBtn" class="btn btn-info">查询订单</button>
+                        <div class="mt-3" id="queryResult"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加环境切换处理函数
+        document.getElementById('sandboxToggle').addEventListener('change', async function (e) {
+            try {
+                const response = await fetch('/api/toggle_sandbox', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sandbox: e.target.checked
+                    })
+                });
+                const data = await response.json();
+                if (data.code === 0) {
+                    alert(`已切换到${data.sandbox ? '沙箱' : '正式'}环境`);
+                } else {
+                    alert('环境切换失败：' + data.msg);
+                    e.target.checked = !e.target.checked; // 恢复开关状态
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('环境切换失败：' + error.message);
+                e.target.checked = !e.target.checked; // 恢复开关状态
+            }
+        });
+
+        // 将原有的脚本保持不变
+        document.getElementById('orderForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const amount = document.getElementById('amount').value;
+            const subject = document.getElementById('subject').value;
+            const timeout = document.getElementById('timeout').value;
+
+            try {
+                const response = await fetch(`/create_order?amount=${amount}&subject=${encodeURIComponent(subject)}&timeout_express=${encodeURIComponent(timeout)}`);
+                const data = await response.json();
+
+                if (data.code === 0) {
+                    document.querySelector('.qrcode-container').style.display = 'block';
+                    document.querySelector('.status-container').style.display = 'block';
+
+                    // 直接使用返回的base64图片
+                    document.getElementById('qrcode').src = data.qr_code;
+                    document.getElementById('orderInfo').textContent = `订单号：${data.order_id}，金额：${data.amount}元`;
+
+                    // 记录订单ID用于查询
+                    document.getElementById('queryOrderId').value = data.order_id;
+
+                    // 开始轮询订单状态
+                    pollOrderStatus(data.order_id);
+
+                    // 初始化并启动计时器
+                    const now = new Date();
+                    paymentTimer = new PaymentTimer(
+                        now,
+                        timeout,
+                        (timeLeft) => {
+                            document.getElementById('countdown').textContent = timeLeft;
+                            document.getElementById('payment-timer').style.display = 'block';
+                        },
+                        () => {
+                            document.getElementById('payment-timer').style.display = 'none';
+                            alert('订单已超时，请重新创建订单');
+                            // 停止轮询
+                            clearInterval(timer);
+                        }
+                    );
+                    paymentTimer.start();
+                } else {
+                    alert('创建订单失败：' + data.detail);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('创建订单失败：' + error.message);
+            }
+        });
+
+        let orderStatusTimer; // 添加全局变量
+
+        // 更新轮询订单状态的函数
+        function pollOrderStatus(orderId) {
+            const statusElem = document.getElementById('orderStatus');
+            // 先清除可能存在的之前的定时器
+            if (orderStatusTimer) {
+                clearInterval(orderStatusTimer);
+            }
+
+            orderStatusTimer = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/query?out_trade_no=${orderId}`);
+                    const data = await response.json();
+
+                    let statusText = '等待支付';
+                    let statusClass = 'alert-info';
+
+                    if (data.code === '10000' && data.trade_status) {
+                        switch (data.trade_status) {
+                            case 'WAIT_BUYER_PAY':
+                                statusText = '等待付款';
+                                statusClass = 'alert-info';
+                                break;
+                            case 'TRADE_CLOSED':
+                                statusText = '交易关闭';
+                                statusClass = 'alert-danger';
+                                clearInterval(orderStatusTimer);
+                                stopPaymentTimer();
+                                break;
+                            case 'TRADE_SUCCESS':
+                                statusText = '支付成功';
+                                statusClass = 'alert-success';
+                                clearInterval(orderStatusTimer);
+                                stopPaymentTimer();
+                                break;
+                            case 'TRADE_FINISHED':
+                                statusText = '交易完成';
+                                statusClass = 'alert-success';
+                                clearInterval(orderStatusTimer);
+                                stopPaymentTimer();
+                                break;
+                        }
+                    }
+
+                    statusElem.textContent = `订单状态：${statusText}`;
+                    statusElem.className = `alert ${statusClass}`;
+                } catch (error) {
+                    console.error('Error:', error);
+                    statusElem.textContent = '订单状态：查询出错';
+                    statusElem.className = 'alert alert-warning';
+                }
+            }, 2000);
+        }
+
+        // 更新订单查询按钮的处理函数
+        document.getElementById('queryBtn').addEventListener('click', async function () {
+            const orderId = document.getElementById('queryOrderId').value.trim();
+            if (!orderId) {
+                alert('请输入订单ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/check_order_status/${orderId}`);
+                const data = await response.json();
+                let resultHtml = '';
+
+                if (data.code === 0) {
+                    // 根据不同交易状态显示不同颜色
+                    const statusColorMap = {
+                        'WAIT_BUYER_PAY': 'info',
+                        'TRADE_CLOSED': 'danger',
+                        'TRADE_SUCCESS': 'success',
+                        'TRADE_FINISHED': 'success'
+                    };
+                    const alertClass = statusColorMap[data.status] || 'warning';
+
+                    resultHtml = `
+                        <div class="alert alert-${alertClass}">
+                            <h5>订单详情</h5>
+                            <p>订单号: ${data.order_id}</p>
+                            <p>交易状态: ${data.status_desc} (${data.status})</p>
+                            <p>交易金额: ${data.amount || '-'}元</p>
+                            <p>支付宝交易号: ${data.trade_no || '-'}</p>
+                            ${data.buyer_info ? `
+                                <p>买家账号: ${data.buyer_info.logon_id}</p>
+                                <p>买家ID: ${data.buyer_info.user_id}</p>
+                            ` : ''}
+                        </div>`;
+                } else {
+                    resultHtml = `<div class="alert alert-warning">
+                        ${data.msg || '订单未支付或不存在'}
+                    </div>`;
+                }
+
+                document.getElementById('queryResult').innerHTML = resultHtml;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('queryResult').innerHTML =
+                    `<div class="alert alert-danger">查询出错: ${error.message}</div>`;
+            }
+        });
+
+        // 在支付成功或取消支付时
+        function stopPaymentTimer() {
+            if (paymentTimer) {
+                paymentTimer.stop();
+                document.getElementById('payment-timer').style.display = 'none';
+            }
+            // 停止轮询
+            if (orderStatusTimer) {
+                clearInterval(orderStatusTimer);
+                const statusElem = document.getElementById('orderStatus');
+                statusElem.textContent = '订单状态：已超时';
+                statusElem.className = 'alert alert-warning';
+            }
+        }
+    </script>
+    <script src="/static/js/payment.js"></script>
+</body>
+
+</html>

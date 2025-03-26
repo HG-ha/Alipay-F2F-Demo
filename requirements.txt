@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+jinja2
+alipay-sdk-python==3.7.409
